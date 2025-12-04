@@ -90,12 +90,12 @@ def login_api(request):
     else:
         return Response({"error": "Invalid credentials"}, status=400)
 
-# Protect this view with JWT authentication
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_profile_api(request, user_id):
     try:
-        # Optional: Check if the authenticated user is requesting their own profile
+    
         if request.user.id != user_id:
             return Response({"error": "Not authorized to view this profile"}, status=403)
             
@@ -127,3 +127,56 @@ def get_user_id(request):
         return Response({"user_id": user.id})
     except User.DoesNotExist:
         return Response({"error": "User not found"}, status=404)
+    
+# In your Django views.py
+@api_view(['POST'])
+@parser_classes([MultiPartParser, FormParser])
+@permission_classes([IsAuthenticated])
+def profile_update_api(request, user_id):
+    try:
+        # Check if the authenticated user is updating their own profile
+        if request.user.id != int(user_id):
+            return Response({"error": "Not authorized to update this profile"}, status=403)
+            
+        user = User.objects.get(id=user_id)
+        profile = user.profile
+
+        # Update user fields
+        if 'name' in request.data:
+            user.first_name = request.data['name']
+            user.save()
+
+        # Update profile fields
+        if 'phone' in request.data:
+            profile.phone = request.data['phone']
+        
+        # Handle location data
+        if 'latitude' in request.data and request.data['latitude']:
+            profile.latitude = float(request.data['latitude'])
+        if 'longitude' in request.data and request.data['longitude']:
+            profile.longitude = float(request.data['longitude'])
+        if 'custom_location' in request.data:
+            profile.custom_location = request.data['custom_location']
+        
+        # Handle profile image
+        if 'profile_image' in request.FILES:
+            profile.profile_image = request.FILES['profile_image']
+        
+        profile.save()
+
+        return Response({
+            "message": "Profile updated successfully",
+            "user_id": user.id,
+            "name": user.first_name,
+            "email": user.email,
+            "phone": profile.phone,
+            "latitude": profile.latitude,
+            "longitude": profile.longitude,
+            "custom_location": profile.custom_location,
+            "profile_image": profile.profile_image.url if profile.profile_image else None,
+        })
+
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=404)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
