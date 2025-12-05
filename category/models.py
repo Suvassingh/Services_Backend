@@ -28,7 +28,7 @@ class Product(models.Model):
     vendorName = models.CharField(max_length=255)
     location = models.CharField(max_length=255)
     contact = models.CharField(max_length=255)
-    images = models.JSONField(default=list)   # List<String>
+    images = models.JSONField(default=list)   
     rating = models.FloatField(default=4.0)
 
     def __str__(self):

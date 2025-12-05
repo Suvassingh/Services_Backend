@@ -20,17 +20,17 @@ def signup_api(request):
         longitude = request.data.get('longitude')
         profile_image = request.data.get('profile_image')
 
-        # Validate required fields
+       
         if not email:
             return Response({"error": "Email is required"}, status=400)
         if not password:
             return Response({"error": "Password is required"}, status=400)
 
-        # Check if user already exists
+        
         if User.objects.filter(username=email).exists():
             return Response({"error": "Account with this email already exists"}, status=400)
 
-        # Create user
+     
         user = User.objects.create_user(
             username=email, 
             email=email, 
@@ -38,7 +38,7 @@ def signup_api(request):
             first_name=name or '',
         )
 
-        # Update the profile that was automatically created by the signal
+      
         profile = user.profile
         profile.phone = phone or ''
         if latitude:
@@ -49,7 +49,6 @@ def signup_api(request):
             profile.profile_image = profile_image
         profile.save()
 
-        # Generate JWT tokens
         refresh = RefreshToken.for_user(user)
         
         return Response({
@@ -74,7 +73,6 @@ def login_api(request):
     user = authenticate(username=email, password=password)
 
     if user:
-        # Generate JWT tokens
         refresh = RefreshToken.for_user(user)
         
         return Response({
@@ -117,7 +115,6 @@ def get_profile_api(request, user_id):
     except Exception as e:
         return Response({"error": str(e)}, status=500)
 
-# Protect this view as well
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user_id(request):
@@ -128,29 +125,25 @@ def get_user_id(request):
     except User.DoesNotExist:
         return Response({"error": "User not found"}, status=404)
     
-# In your Django views.py
 @api_view(['POST'])
 @parser_classes([MultiPartParser, FormParser])
 @permission_classes([IsAuthenticated])
 def profile_update_api(request, user_id):
     try:
-        # Check if the authenticated user is updating their own profile
+       
         if request.user.id != int(user_id):
             return Response({"error": "Not authorized to update this profile"}, status=403)
             
         user = User.objects.get(id=user_id)
         profile = user.profile
 
-        # Update user fields
         if 'name' in request.data:
             user.first_name = request.data['name']
             user.save()
 
-        # Update profile fields
         if 'phone' in request.data:
             profile.phone = request.data['phone']
         
-        # Handle location data
         if 'latitude' in request.data and request.data['latitude']:
             profile.latitude = float(request.data['latitude'])
         if 'longitude' in request.data and request.data['longitude']:
@@ -158,7 +151,6 @@ def profile_update_api(request, user_id):
         if 'custom_location' in request.data:
             profile.custom_location = request.data['custom_location']
         
-        # Handle profile image
         if 'profile_image' in request.FILES:
             profile.profile_image = request.FILES['profile_image']
         
