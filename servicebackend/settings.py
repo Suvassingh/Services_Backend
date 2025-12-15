@@ -12,7 +12,7 @@ SECRET_KEY = 'django-insecure-&o+b10s#zg+78r08aed4*jx#n(z)0(x*5+k1!^!h0$7#+mx3c7
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['10.0.2.2',"127.0.0.1"]
+ALLOWED_HOSTS = ['10.0.2.2',"127.0.0.1",'localhost',"emptymind",'192.168.137.1']
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',

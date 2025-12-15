@@ -11,11 +11,11 @@ from .views import (
     get_featured_products,
     update_product,
     delete_product,
-    get_product_detail,
+    get_product_detail,toggle_like,product_like_status,get_liked_products
 )
 
 urlpatterns = [
-    path('', get_categories, name='categories_root'),  # GET /api/categories/
+    path('', get_categories, name='categories_root'),  
     path('categories/', get_categories, name='get_categories'),
     path('services/<int:category_id>/', get_services_by_category, name='get_services_by_category'),
     path('add/', add_category, name='add_category'),
@@ -28,4 +28,7 @@ urlpatterns = [
     path('product/<int:pk>/delete/', delete_product, name='delete_product'),
     path('product/<int:pk>/', get_product_detail, name='get_product_detail'),
     path('upload/', upload_image, name='upload_image'),
+    path("toggle-like/", toggle_like, name="toggle_like"),
+    path("like-status/<int:product_id>/", product_like_status, name="product_like_status"),
+    path("liked-products/",get_liked_products,name="get_liked_products"),
 ]
