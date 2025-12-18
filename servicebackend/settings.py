@@ -2,33 +2,23 @@
 import os
 from pathlib import Path
 from datetime import timedelta
+from dotenv import load_dotenv 
 
+
+
+load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 
-SECRET_KEY = 'django-insecure-&o+b10s#zg+78r08aed4*jx#n(z)0(x*5+k1!^!h0$7#+mx3c7'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 
-DEBUG = True
+DEBUG = os.getenv('DEBUG') == 'True'
 
-ALLOWED_HOSTS = ['10.0.2.2',"127.0.0.1",'localhost',"emptymind",'192.168.137.1']
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
-}
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
 
-from datetime import timedelta
 
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': False,
-    'BLACKLIST_AFTER_ROTATION': True,
-}
-
-# Application definition
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -45,6 +35,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -52,10 +43,18 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
 ]
-
+CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ALL_ORIGINS').split(',')
 ROOT_URLCONF = 'servicebackend.urls'
-
+CORS_ALLOW_HEADERS = [
+    'authorization',
+    'content-type',
+    'accept',
+    'origin',
+]
+CORS_ALLOW_CREDENTIALS = True
+ROOT_URLCONF = 'servicebackend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -83,23 +82,37 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # File upload permissions
 FILE_UPLOAD_PERMISSIONS = 0o644
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
+
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'services_db',
-        'USER': 'root',
-        'PASSWORD': 'Vegetable@123',
-        'HOST': '127.0.0.1',
-        'PORT': '3306',
+        'NAME':os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
     }
 }
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+from datetime import timedelta
 
-# Password validation
-# https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(
+        minutes=int(os.getenv("ACCESS_TOKEN_LIFETIME_MINUTES", 5))
+    ),
+    'REFRESH_TOKEN_LIFETIME': timedelta(
+        days=int(os.getenv("REFRESH_TOKEN_LIFETIME_DAYS", 1))
+    ),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,
+}
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {
