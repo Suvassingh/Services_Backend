@@ -60,24 +60,50 @@ def add_product(request, category_id):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# @api_view(['POST'])
+# @parser_classes([MultiPartParser, FormParser])
+# def upload_image(request):
+ 
+#     if 'image' not in request.FILES:
+#         return Response({"error": "No image provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+#     image_file = request.FILES['image']
+#     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+#     filename = f"product_{timestamp}_{image_file.name}"
+
+#     save_subdir = "product_images"
+#     save_path = os.path.join(save_subdir, filename)
+
+#     full_path = default_storage.save(save_path, image_file)
+
+#     image_url = f"{settings.MEDIA_URL}{full_path}"
+#     return Response({"image_url": image_url}, status=status.HTTP_200_OK)
 @api_view(['POST'])
 @parser_classes([MultiPartParser, FormParser])
 def upload_image(request):
- 
-    if 'image' not in request.FILES:
-        return Response({"error": "No image provided"}, status=status.HTTP_400_BAD_REQUEST)
+    images = request.FILES.getlist('image')
 
-    image_file = request.FILES['image']
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"product_{timestamp}_{image_file.name}"
+    if not images:
+        return Response({"error": "No images provided"}, status=400)
 
-    save_subdir = "product_images"
-    save_path = os.path.join(save_subdir, filename)
+    image_urls = []
 
-    full_path = default_storage.save(save_path, image_file)
+    for image_file in images:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"product_{timestamp}_{image_file.name}"
 
-    image_url = f"{settings.MEDIA_URL}{full_path}"
-    return Response({"image_url": image_url}, status=status.HTTP_200_OK)
+        save_subdir = "product_images"
+        save_path = os.path.join(save_subdir, filename)
+
+        full_path = default_storage.save(save_path, image_file)
+        image_url = f"{settings.MEDIA_URL}{full_path}"
+
+        image_urls.append(image_url)
+
+    return Response(
+        {"image_urls": image_urls},
+        status=status.HTTP_200_OK
+    )
 
 @api_view(['GET'])
 def get_products_by_category(request, category_id):

@@ -7,7 +7,17 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import UserProfile
-
+from django.contrib.auth.models import User
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes
+from django.core.mail import send_mail
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from django.conf import settings
+from django.http import HttpResponse
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.http import urlsafe_base64_decode
 @api_view(['POST'])
 @parser_classes([MultiPartParser, FormParser])
 def signup_api(request):
@@ -172,3 +182,81 @@ def profile_update_api(request, user_id):
         return Response({"error": "User not found"}, status=404)
     except Exception as e:
         return Response({"error": str(e)}, status=500)
+    
+    
+    
+@api_view(['POST'])
+def forgot_password_api(request):
+    email = request.data.get('email')
+
+    if not email:
+        return Response({"error": "Email is required"}, status=400)
+
+    try:
+        user = User.objects.get(email=email)
+
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = PasswordResetTokenGenerator().make_token(user)
+
+        reset_link = f"http://127.0.0.1:8000/api/reset-password/{uid}/{token}/"
+
+
+        send_mail(
+            subject="Reset Your Password",
+            message=f"""
+Hello {user.first_name},
+
+Click the link below to reset your password:
+
+{reset_link}
+
+If you didn’t request this, ignore this email.
+            """,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
+            fail_silently=False,
+        )
+
+        return Response({"message": "Password reset email sent"})
+
+    except User.DoesNotExist:
+        return Response({"error": "No account found with this email"}, status=404)
+
+
+
+
+
+@api_view(['GET', 'POST'])
+def reset_password_api(request, uid, token):
+    try:
+        user_id = urlsafe_base64_decode(uid).decode()
+        user = User.objects.get(pk=user_id)
+
+        if not PasswordResetTokenGenerator().check_token(user, token):
+            return HttpResponse("Invalid or expired link", status=400)
+
+        if request.method == 'GET':
+            return HttpResponse(f"""
+                <html>
+                <body style="font-family:Arial;padding:20px">
+                    <h2>Reset Password</h2>
+                    <form method="POST">
+                        <input type="password" name="password" placeholder="New password" required /><br><br>
+                        <button type="submit">Reset Password</button>
+                    </form>
+                </body>
+                </html>
+            """)
+
+        if request.method == 'POST':
+            password = request.data.get('password') or request.POST.get('password')
+            user.set_password(password)
+            user.save()
+
+            return HttpResponse("""
+                <h3>Password reset successful</h3>
+                <p>You can now return to the app and login.</p>
+            """)
+
+    except Exception:
+        return HttpResponse("Invalid reset link", status=400)
